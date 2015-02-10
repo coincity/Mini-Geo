@@ -1,12 +1,18 @@
 <!doctype html>
 <html>
 <head>
+<script type="text/javascript">
+    var url = "<?php echo URL ?>";
+    console.log(url);
+    </script>
     <!-- META -->
     <meta charset="utf-8">
     <!-- CSS -->
     <link rel="stylesheet" href="<?php echo URL; ?>css/style.css" />
 </head>
 <body>
+
+    
     <!-- wrapper, to center website -->
     <div class="wrapper">
 
@@ -23,7 +29,7 @@
             <?php if (Session::get('user_logged_in') == true) { ?>
                 <!-- for logged in users -->
                 <li <?php if ($this->checkForActiveController($filename, "dashboard")) { echo ' class="active" '; } ?> >
-                    <a href="<?php URL; ?>dashboard/index">Dashboard</a>
+                    <a href="<?php echo URL; ?>dashboard/index">Dashboard</a>
                 </li>            
             <?php } else { ?>
                 <!-- for not logged in users -->
@@ -34,6 +40,9 @@
                     <a href="<?php echo URL; ?>login/register">Register</a>
                 </li>
             <?php } ?>
+                <li>
+                    <a href="<?php echo URL; ?>game">game</a>
+                </li>
         </ul>
 
         <!-- my account -->

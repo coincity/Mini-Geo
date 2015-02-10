@@ -283,7 +283,7 @@ class LoginModel
         $query->execute(array(':user_email' => $_POST['user_email']));
         $count =  $query->rowCount();
         if ($count == 1) {
-            $_SESSION["feedback_negative"][] = FEEDBACK_USER_EMAIL_ALREADY_TAKEN;
+            $_SESSION["feedback_negative"][] = FEEDBACK_EMAIL_ALREADY_TAKEN;
             return false;
         }
 
