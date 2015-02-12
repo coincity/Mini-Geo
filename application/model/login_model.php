@@ -476,7 +476,7 @@ class LoginModel
      */
     public function requestPasswordReset()
     {
-        if (!isset($_POST['user_name']) OR empty($_POST['user_name'])) {
+        if (!isset($_POST['user_name_or_email']) OR empty($_POST['user_name_or_email'])) {
             $_SESSION["feedback_negative"][] = FEEDBACK_USERNAME_FIELD_EMPTY;
             return false;
         }
@@ -486,12 +486,12 @@ class LoginModel
         // generate random hash for email password reset verification (40 char string)
         $user_password_reset_hash = sha1(uniqid(mt_rand(), true));
         // clean user input
-        $user_name = strip_tags($_POST['user_name']);
+        $user_name_or_email = strip_tags($_POST['user_name_or_email']);
 
         // check if that username exists
         $query = $this->db->prepare("SELECT user_id, user_email FROM users
-                                     WHERE user_name = :user_name AND user_provider_type = :provider_type");
-        $query->execute(array(':user_name' => $user_name, ':provider_type' => 'DEFAULT'));
+                                     WHERE user_name = :user_name_or_email OR user_email = :user_name_or_email");
+        $query->execute(array(':user_name_or_email' => $user_name_or_email));
         $count = $query->rowCount();
         if ($count != 1) {
             $_SESSION["feedback_negative"][] = FEEDBACK_USER_DOES_NOT_EXIST;
@@ -503,9 +503,9 @@ class LoginModel
         $user_email = $result_user_row->user_email;
 
         // set token (= a random hash string and a timestamp) into database
-        if ($this->setPasswordResetDatabaseToken($user_name, $user_password_reset_hash, $temporary_timestamp) == true) {
+        if ($this->setPasswordResetDatabaseToken($user_name_or_email, $user_password_reset_hash, $temporary_timestamp) == true) {
             // send a mail to the user, containing a link with username and token hash string
-            if ($this->sendPasswordResetMail($user_name, $user_password_reset_hash, $user_email)) {
+            if ($this->sendPasswordResetMail($user_name_or_email, $user_password_reset_hash, $user_email)) {
                 return true;
             }
         }
@@ -520,15 +520,15 @@ class LoginModel
      * @param int $temporary_timestamp timestamp
      * @return bool success status
      */
-    public function setPasswordResetDatabaseToken($user_name, $user_password_reset_hash, $temporary_timestamp)
+    public function setPasswordResetDatabaseToken($user_name_or_email, $user_password_reset_hash, $temporary_timestamp)
     {
         $query_two = $this->db->prepare("UPDATE users
                                             SET user_password_reset_hash = :user_password_reset_hash,
                                                 user_password_reset_timestamp = :user_password_reset_timestamp
-                                          WHERE user_name = :user_name AND user_provider_type = :provider_type");
+                                          WHERE user_name = :user_name_or_email OR user_email = :user_name_or_email");
         $query_two->execute(array(':user_password_reset_hash' => $user_password_reset_hash,
                                   ':user_password_reset_timestamp' => $temporary_timestamp,
-                                  ':user_name' => $user_name,
+                                  ':user_name_or_email' => $user_name_or_email,
                                   ':provider_type' => 'DEFAULT'));
 
         // check if exactly one row was successfully changed
@@ -606,11 +606,9 @@ class LoginModel
         $query = $this->db->prepare("SELECT user_id, user_password_reset_timestamp
                                        FROM users
                                       WHERE user_name = :user_name
-                                        AND user_password_reset_hash = :user_password_reset_hash
-                                        AND user_provider_type = :user_provider_type");
+                                        AND user_password_reset_hash = :user_password_reset_hash");
         $query->execute(array(':user_password_reset_hash' => $verification_code,
-                              ':user_name' => $user_name,
-                              ':user_provider_type' => 'DEFAULT'));
+                              ':user_name' => $user_name));
 
         // if this user with exactly this verification hash code exists
         if ($query->rowCount() != 1) {
@@ -686,13 +684,11 @@ class LoginModel
                                             user_password_reset_hash = NULL,
                                             user_password_reset_timestamp = NULL
                                       WHERE user_name = :user_name
-                                        AND user_password_reset_hash = :user_password_reset_hash
-                                        AND user_provider_type = :user_provider_type");
+                                        AND user_password_reset_hash = :user_password_reset_hash");
 
         $query->execute(array(':user_password_hash' => $user_password_hash,
                               ':user_name' => $_POST['user_name'],
-                              ':user_password_reset_hash' => $_POST['user_password_reset_hash'],
-                              ':user_provider_type' => 'DEFAULT'));
+                              ':user_password_reset_hash' => $_POST['user_password_reset_hash']));
 
         // check if exactly one row was successfully changed:
         if ($query->rowCount() == 1) {
